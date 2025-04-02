@@ -1,5 +1,6 @@
 import pygame
 import random
+import time
 
 # Initialize Pygame
 pygame.init()
@@ -8,13 +9,15 @@ pygame.init()
 SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 600
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Snake Game")
+pygame.display.set_caption("Extended Snake Game")
 
 # Colors
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+YELLOW = (255, 255, 0)
 
 # Snake block size
 BLOCK_SIZE = 20
@@ -39,11 +42,11 @@ class Snake:
         
         # Check for wall collision
         if new_x < 0 or new_x >= SCREEN_WIDTH or new_y < 0 or new_y >= SCREEN_HEIGHT:
-            return True  # Game over due to wall collision
+            return True  # Game over
         
         # Check for self-collision
         if (new_x, new_y) in self.positions[1:]:
-            return True  # Game over due to self-collision
+            return True  # Game over
         
         self.positions.insert(0, (new_x, new_y))
         if len(self.positions) > self.length:
@@ -59,9 +62,13 @@ class Snake:
         for pos in self.positions:
             pygame.draw.rect(surface, GREEN, (pos[0], pos[1], BLOCK_SIZE, BLOCK_SIZE))
 
-# Food
+# Food class with different weights and timers
 class Food:
     def __init__(self):
+        self.weight = random.choice([1, 2, 3])  # 1, 2, or 3 points
+        self.color = YELLOW if self.weight == 1 else RED if self.weight == 2 else BLUE
+        self.spawn_time = time.time()
+        self.lifetime = random.randint(3, 8)  # 3-8 seconds
         self.position = self.random_position()
 
     def random_position(self):
@@ -69,8 +76,11 @@ class Food:
         y = random.randint(0, (SCREEN_HEIGHT - BLOCK_SIZE) // BLOCK_SIZE) * BLOCK_SIZE
         return (x, y)
 
+    def is_expired(self):
+        return time.time() - self.spawn_time > self.lifetime
+
     def draw(self, surface):
-        pygame.draw.rect(surface, RED, (self.position[0], self.position[1], BLOCK_SIZE, BLOCK_SIZE))
+        pygame.draw.rect(surface, self.color, (self.position[0], self.position[1], BLOCK_SIZE, BLOCK_SIZE))
 
 # Game setup
 snake = Snake()
@@ -82,6 +92,7 @@ clock = pygame.time.Clock()
 running = True
 game_over = False
 while running:
+    # Event handling
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -101,15 +112,20 @@ while running:
                 game_over = False
 
     if not game_over:
+        # Update snake
         game_over = snake.update()
 
         # Check if food is eaten
         if snake.get_head_position() == food.position:
             snake.length += 1
-            snake.score += 1
-            # Level up every 3 foods
-            if snake.score % 3 == 0:
+            snake.score += food.weight
+            # Level up every 5 points
+            if snake.score >= snake.level * 5:
                 snake.level += 1
+            food = Food()
+
+        # Check if food expired
+        if food.is_expired():
             food = Food()
 
         # Drawing
@@ -125,9 +141,7 @@ while running:
     else:
         # Game over screen
         game_over_text = font.render("Game Over! Press R to restart", True, WHITE)
-        final_score_text = font.render(f"Final Score: {snake.score}", True, WHITE)
-        screen.blit(game_over_text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2 - 30))
-        screen.blit(final_score_text, (SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT // 2 + 10))
+        screen.blit(game_over_text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2))
 
     pygame.display.flip()
     clock.tick(10 + snake.level * 2)  # Speed increases with level

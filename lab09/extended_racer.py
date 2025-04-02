@@ -18,7 +18,7 @@ WHITE = (255, 255, 255)
 # Load images
 def load_image(name, scale=1):
     try:
-        image = pygame.image.load(name)
+        image = pygame.image.load(name).convert_alpha()
         if scale != 1:
             size = image.get_size()
             image = pygame.transform.scale(image, (int(size[0] * scale), int(size[1] * scale)))
@@ -27,14 +27,13 @@ def load_image(name, scale=1):
         print(f"Cannot load image: {name}")
         # Fallback surface if image not found
         surf = pygame.Surface((50, 80))
-        surf.fill(RED if "enemy" in name else BLUE if "player" in name else YELLOW)
+        surf.fill((255, 0, 0) if "enemy" in name else (0, 0, 255) if "player" in name else (255, 255, 0))
         return surf
 
 # Load assets
-player_img = load_image("player_car.png", 0.5).convert_alpha()
-enemy_img = load_image("enemy_car.png", 0.5).convert_alpha()
-coin_img = load_image("coin.png", 0.5).convert_alpha()
-# Scale down coins
+player_img = load_image("player_car.png", 0.5)
+enemy_img = load_image("enemy_car.png", 0.5)
+coin_img = load_image("coin.png", 0.5)
 
 # Player car
 class PlayerCar(pygame.sprite.Sprite):
@@ -140,3 +139,4 @@ while running:
     clock.tick(60)
 
 pygame.quit()
+sys.exit()
